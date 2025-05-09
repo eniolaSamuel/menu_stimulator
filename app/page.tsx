@@ -60,18 +60,17 @@ export default function Home() {
       return
     }
 
-    // Handle main menu navigation
+
     if (key === "00" && currentPath.length > 0) {
-      // Return to main menu
       setInputCode("*465#")
       return
     }
 
-    // For all other input, simply append to the code
+
     setInputCode((prev) => prev + key)
   }
 
-  // Handle direct code input
+
   const handleDirectCodeInput = (code: string) => {
     setInputCode(code)
   }
