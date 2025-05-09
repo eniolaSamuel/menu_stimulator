@@ -44,16 +44,16 @@ export default function Home() {
         }
       }
 
-      // Allow all characters including # to be added to color input
+
       if (key !== "0" && key !== "00") {
         setColorInput((prev) => prev + key)
         return
       }
     }
 
-    // Handle back navigation
+
     if (key === "0" && currentPath.length > 0) {
-      // Go back one level
+
       const newPath = [...currentPath]
       newPath.pop()
       setInputCode(generateCode(newPath))
