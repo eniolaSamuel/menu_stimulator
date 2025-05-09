@@ -75,15 +75,14 @@ export default function Home() {
     setInputCode(code)
   }
 
-  // Handle enter button click
+
   const handleEnterClick = () => {
     if (inputCode.startsWith("*465") && inputCode.endsWith("#")) {
       setIsInitialized(true)
 
-      // If it's a complex code with multiple selections, parse it
+
       if (inputCode.length > 6) {
-        // More than just *465#
-        // The code will be parsed by the useEffect that watches inputCode
+
       }
     } else {
       alert("Please enter a valid code format (e.g., *465#)")
@@ -126,7 +125,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Floating Keypad */}
+
         <div className="mt-6 w-full max-w-md">
           <KeyPad onKeyPress={handleKeyPress} />
         </div>
