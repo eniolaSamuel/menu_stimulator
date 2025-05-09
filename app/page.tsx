@@ -12,10 +12,9 @@ export default function Home() {
   const [isColorInputActive, setIsColorInputActive] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Parse the code whenever it changes
+
   useEffect(() => {
     if (inputCode.startsWith("*465") && inputCode.endsWith("#")) {
-      // Extract the navigation path from the code
       const path = inputCode
           .slice(4, inputCode.length - 1) // Remove *465 and #
           .split("*")
@@ -24,7 +23,7 @@ export default function Home() {
 
       setCurrentPath(path)
 
-      // Check if we're at the color input stage
+
       const isAtColorInput =
           path.length === 3 && (path[0] === 3 || path[0] === 4 || path[0] === 5) && path[2] >= 1 && path[2] <= 5
 
@@ -34,48 +33,59 @@ export default function Home() {
 
 
   const handleKeyPress = (key: string) => {
-    if (isColorInputActive && key !== "#" && key !== "*") {
-      setColorInput((prev) => prev + key)
-      return
-    }
-
-    if (key === "#") {
-      if (isColorInputActive && colorInput) {
-        alert(`Appointment booked! Your preferred color: ${colorInput}`)
-        setInputCode("*465#")
-        setColorInput("")
-        setIsColorInputActive(false)
+    if (isColorInputActive) {
+      if (key === "#") {
+        if (colorInput) {
+          alert(`Appointment booked! Your preferred color: ${colorInput}`)
+          setInputCode("*465#")
+          setColorInput("")
+          setIsColorInputActive(false)
+          return
+        }
       }
-      return
+
+      // Allow all characters including # to be added to color input
+      if (key !== "0" && key !== "00") {
+        setColorInput((prev) => prev + key)
+        return
+      }
     }
 
+    // Handle back navigation
     if (key === "0" && currentPath.length > 0) {
+      // Go back one level
       const newPath = [...currentPath]
       newPath.pop()
       setInputCode(generateCode(newPath))
       return
     }
 
-    if (key === "0" && key === "0" && currentPath.length > 0) {
+    // Handle main menu navigation
+    if (key === "00" && currentPath.length > 0) {
+      // Return to main menu
       setInputCode("*465#")
       return
     }
 
-
+    // For all other input, simply append to the code
     setInputCode((prev) => prev + key)
   }
 
-
+  // Handle direct code input
   const handleDirectCodeInput = (code: string) => {
     setInputCode(code)
   }
 
-
+  // Handle enter button click
   const handleEnterClick = () => {
-    if (inputCode === "*465#") {
+    if (inputCode.startsWith("*465") && inputCode.endsWith("#")) {
       setIsInitialized(true)
-    } else if (inputCode.startsWith("*465") && inputCode.endsWith("#")) {
-      setIsInitialized(true)
+
+      // If it's a complex code with multiple selections, parse it
+      if (inputCode.length > 6) {
+        // More than just *465#
+        // The code will be parsed by the useEffect that watches inputCode
+      }
     } else {
       alert("Please enter a valid code format (e.g., *465#)")
     }
@@ -117,7 +127,7 @@ export default function Home() {
           </div>
         </div>
 
-
+        {/* Floating Keypad */}
         <div className="mt-6 w-full max-w-md">
           <KeyPad onKeyPress={handleKeyPress} />
         </div>
