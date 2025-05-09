@@ -5,9 +5,10 @@ interface DisplayProps {
     path: number[]
     isColorInputActive: boolean
     colorInput: string
+    simpleInput: string
 }
 
-const Display: React.FC<DisplayProps> = ({ path, isColorInputActive, colorInput }) => {
+const Display: React.FC<DisplayProps> = ({ path, isColorInputActive, colorInput, simpleInput }) => {
     const menuContent = getMenuContent(path)
 
     return (
@@ -35,6 +36,11 @@ const Display: React.FC<DisplayProps> = ({ path, isColorInputActive, colorInput 
                             </li>
                         ))}
                     </ul>
+                    {simpleInput && (
+                        <div className="mt-4 p-2 bg-amber-100 rounded">
+                            Current input: {simpleInput} <span className="text-gray-500">(Press # to confirm)</span>
+                        </div>
+                    )}
                     {path.length > 0 && (
                         <p className="mt-4 text-sm text-gray-600">Press 0 to go back, 00 to return to main menu</p>
                     )}
