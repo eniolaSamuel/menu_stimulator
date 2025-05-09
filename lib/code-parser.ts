@@ -5,7 +5,7 @@ export function parseCode(code: string): number[] {
 
 
     return code
-        .slice(4, code.length - 1) // Remove *465 and #
+        .slice(4, code.length - 1)
         .split("*")
         .filter((item) => item !== "")
         .map(Number)
