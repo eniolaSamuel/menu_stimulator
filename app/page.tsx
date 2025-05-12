@@ -7,7 +7,7 @@ import { menuData } from "@/lib/menu-data"
 export default function Home() {
   const [code, setCode] = useState<string>("")
   const [inputValue, setInputValue] = useState<string>("")
-  const [currentMenu, setCurrentMenu] = useState<any>(null)
+  const [currentMenu, setCurrentMenu] = useState<never>(null)
   const [showColorInput, setShowColorInput] = useState<boolean>(false)
   const [history, setHistory] = useState<string[]>([])
 
