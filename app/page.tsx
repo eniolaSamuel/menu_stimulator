@@ -11,7 +11,7 @@ export default function Home() {
   const [showColorInput, setShowColorInput] = useState<boolean>(false)
   const [history, setHistory] = useState<string[]>([])
 
-  // Process the code and determine which menu to display
+
   useEffect(() => {
     if (code === "*465#") {
       setCurrentMenu({
