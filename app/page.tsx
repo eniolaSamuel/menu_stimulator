@@ -1,190 +1,170 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import KeyPad from "@/components/key-pad"
-import Display from "@/components/display"
-import { generateCode } from "@/lib/code-parser"
+import { MenuDisplay } from "@/components/menu-display"
+import { menuData } from "@/lib/menu-data"
 
 export default function Home() {
-  const [inputCode, setInputCode] = useState("")
-  const [currentPath, setCurrentPath] = useState<number[]>([])
-  const [colorInput, setColorInput] = useState("")
-  const [isColorInputActive, setIsColorInputActive] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false)
-  const [simpleInput, setSimpleInput] = useState("")
+  const [code, setCode] = useState<string>("")
+  const [inputValue, setInputValue] = useState<string>("")
+  const [currentMenu, setCurrentMenu] = useState<any>(null)
+  const [showColorInput, setShowColorInput] = useState<boolean>(false)
+  const [history, setHistory] = useState<string[]>([])
 
-
+  // Process the code and determine which menu to display
   useEffect(() => {
-    if (inputCode.startsWith("*465") && inputCode.endsWith("#")) {
-      const path = inputCode
-          .slice(4, inputCode.length - 1)
-          .split("*")
-          .filter((item) => item !== "")
-          .map(Number)
+    if (code === "*465#") {
+      setCurrentMenu({
+        title: "Welcome to COCOALATE CROWN CRAFT",
+        subtitle: "Which of these services would interest you?",
+        options: menuData.mainMenu,
+        type: "main",
+      })
+      setShowColorInput(false)
+    } else if (code.startsWith("*465*")) {
+      const parts = code.slice(0, -1).split("*").filter(Boolean)
+      parts.shift() // Remove the "465" part
 
-      setCurrentPath(path)
+      let menu = menuData.mainMenu
+      let currentTitle = "Welcome to COCOALATE CROWN CRAFT"
+      let currentSubtitle = "Which of these services would interest you?"
+      let menuType = "main"
+      let serviceDetails = ""
 
+      for (let i = 0; i < parts.length; i++) {
+        const selection = Number.parseInt(parts[i], 10)
 
-      const isAtColorInput =
-          path.length === 3 && (path[0] === 3 || path[0] === 4 || path[0] === 5) && path[2] >= 1 && path[2] <= 5
+        if (i === 0) {
+          // First level selection (main menu)
+          const selectedOption = menu[selection - 1]
+          if (!selectedOption) break
 
-      setIsColorInputActive(isAtColorInput)
-      setIsInitialized(true)
-    }
-  }, [inputCode])
+          currentTitle = selectedOption.title
+          serviceDetails = selectedOption.title
 
-  // Process simple input (just numbers after initialization)
-  const processSimpleInput = (input: string) => {
-    if (!isInitialized) return
+          if (selection === 3 || selection === 4 || selection === 5) {
+            menu = selectedOption.submenu || []
+            currentSubtitle = "Select Your Preferred Style"
+            menuType = "submenu1"
+          } else {
+            menu = []
+            currentSubtitle = `Thank you! You have booked a service for ${serviceDetails}.`
+            menuType = "final"
+          }
+        } else if (i === 1 && (parts[0] === "3" || parts[0] === "4" || parts[0] === "5")) {
+          // Second level selection (submenu 1)
+          const mainSelection = Number.parseInt(parts[0], 10)
+          const mainOption = menuData.mainMenu[mainSelection - 1]
+          const selectedOption = mainOption.submenu?.[selection - 1]
+          if (!selectedOption) break
 
-    // If we're in color input mode, handle differently
-    if (isColorInputActive) {
-      if (input === "#") {
-        if (colorInput) {
-          alert(`Appointment booked! Your preferred color: ${colorInput}`)
-          setInputCode("*465#")
-          setColorInput("")
-          setIsColorInputActive(false)
-          setSimpleInput("")
+          currentTitle = `${mainOption.title} - ${selectedOption.title}`
+          serviceDetails = `${mainOption.title} - ${selectedOption.title}`
+          menu = menuData.lengthMenu
+          currentSubtitle = "Select Your Preferred Length"
+          menuType = "submenu2"
+        } else if (i === 2 && (parts[0] === "3" || parts[0] === "4" || parts[0] === "5")) {
+          // Third level selection (submenu 2 - length)
+          const lengthOption = menuData.lengthMenu[selection - 1]
+          if (!lengthOption) break
+
+          currentTitle += ` - ${lengthOption.title}`
+          serviceDetails += ` - ${lengthOption.title}`
+          menu = []
+          currentSubtitle = "Input Your Preferred Color"
+          menuType = "color"
+          setShowColorInput(true)
+        } else if (i === 3 && (parts[0] === "3" || parts[0] === "4" || parts[0] === "5")) {
+          // Color input
+          const colorValue = parts[i]
+          currentTitle += ` - Color: ${colorValue}`
+          serviceDetails += ` - Color: ${colorValue}`
+          menu = []
+          currentSubtitle = `Thank you! You have booked a service for ${serviceDetails}.`
+          menuType = "final"
+          setShowColorInput(false)
         }
-      } else if (input === "0") {
-        // Go back one level
-        const newPath = [...currentPath]
-        newPath.pop()
-        setInputCode(generateCode(newPath))
-        setSimpleInput("")
-      } else if (input === "00") {
+      }
+
+      setCurrentMenu({
+        title: currentTitle,
+        subtitle: currentSubtitle,
+        options: menu,
+        type: menuType,
+      })
+    }
+  }, [code])
+
+  const handleSubmit = () => {
+    if (inputValue.endsWith("#")) {
+      // Process the code
+      const newCode = inputValue
+      setCode(newCode)
+      setHistory((prev) => [...prev, newCode])
+      setInputValue("")
+    } else if (currentMenu && !showColorInput) {
+      // Handle menu selection
+      const selection = Number.parseInt(inputValue, 10)
+
+      if (inputValue === "00" && code !== "*465#") {
         // Return to main menu
-        setInputCode("*465#")
-        setSimpleInput("")
-      } else {
-        // Add to color input
-        setColorInput((prev) => prev + input)
+        setCode("*465#")
+        setInputValue("")
+        return
       }
-      return
-    }
 
-    // Handle navigation inputs
-    if (input === "#") {
-      // Process the current simple input as a selection
-      if (simpleInput) {
-        const selection = Number.parseInt(simpleInput)
-        if (!isNaN(selection)) {
-          const newPath = [...currentPath, selection]
-          setInputCode(generateCode(newPath))
+      if (inputValue === "0" && code !== "*465#") {
+        // Go back one level
+        const parts = code.slice(0, -1).split("*").filter(Boolean)
+        if (parts.length <= 1) {
+          setCode("*465#")
+        } else {
+          const newCode = "*" + parts.slice(0, parts.length - 1).join("*") + "#"
+          setCode(newCode)
         }
-        setSimpleInput("")
+        setInputValue("")
+        return
       }
-    } else if (input === "0") {
-      // Go back one level
-      if (currentPath.length > 0) {
-        const newPath = [...currentPath]
-        newPath.pop()
-        setInputCode(generateCode(newPath))
-        setSimpleInput("")
+
+      if (selection > 0 && selection <= currentMenu.options.length) {
+        const newCode = code.slice(0, -1) + "*" + selection + "#"
+        setCode(newCode)
+        setInputValue("")
       }
-    } else if (input === "00") {
-      // Return to main menu
-      setInputCode("*465#")
-      setSimpleInput("")
-    } else {
-      // Add to simple input buffer
-      setSimpleInput((prev) => prev + input)
-    }
-  }
-
-  // Handle keypad input
-  const handleKeyPress = (key: string) => {
-    // Check if this is a full code input starting with *
-    if (key === "*" || inputCode.includes("*")) {
-      // Handle as full code input
-      setInputCode((prev) => prev + key)
-      return
-    }
-
-    // Otherwise, process as simple input
-    processSimpleInput(key)
-  }
-
-  // Handle direct code input
-  const handleDirectCodeInput = (code: string) => {
-    // If it starts with *, treat as full code
-    if (code.startsWith("*")) {
-      setInputCode(code)
-    } else {
-      // Otherwise, treat as simple input
-      setSimpleInput(code)
-    }
-  }
-
-  // Handle enter button click
-  const handleEnterClick = () => {
-    // Check if we have a full code input
-    if (inputCode.startsWith("*465") && inputCode.endsWith("#")) {
-      // Process full code
-      // The useEffect will handle this
-    }
-    // Check if we have a simple input and are already initialized
-    else if (isInitialized && simpleInput) {
-      const selection = Number.parseInt(simpleInput)
-      if (!isNaN(selection)) {
-        const newPath = [...currentPath, selection]
-        setInputCode(generateCode(newPath))
-        setSimpleInput("")
-      }
-    }
-    // Invalid input
-    else if (!isInitialized) {
-      alert("Please enter a valid code format (e.g., *465#)")
+    } else if (showColorInput) {
+      // Handle color input
+      const newCode = code.slice(0, -1) + "*" + inputValue + "#"
+      setCode(newCode)
+      setInputValue("")
     }
   }
 
   return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-100">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="p-4 bg-amber-800 text-white text-center font-bold">COCOALATE CROWN CRAFT</div>
+      <main className="flex min-h-screen flex-col items-center justify-between p-4 md:p-24 bg-gray-100">
+        <div className="z-10 w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold text-center mb-6">Hair Salon Menu Simulator</h1>
 
-          {isInitialized ? (
-              <Display
-                  path={currentPath}
-                  isColorInputActive={isColorInputActive}
-                  colorInput={colorInput}
-                  simpleInput={simpleInput}
-              />
-          ) : (
-              <div className="p-8 bg-gray-50 border-t border-b border-gray-200 text-center">
-                <h2 className="text-lg font-bold mb-4">Welcome to COCOALATE CROWN CRAFT</h2>
-                <p className="mb-4">Please enter the code *465# to access our services</p>
-              </div>
-          )}
-
-          <div className="p-4 bg-gray-200">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isInitialized ? "Enter Selection or Full Code:" : "Enter Code:"}
-              </label>
+            <div className="mb-6">
               <div className="flex">
                 <input
                     type="text"
-                    value={inputCode.startsWith("*") ? inputCode : simpleInput}
-                    onChange={(e) => handleDirectCodeInput(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-l"
-                    placeholder={isInitialized ? "Enter number or *465*..." : "*465#"}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="flex-1 p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    placeholder={showColorInput ? "Enter color..." : "Enter code or selection..."}
                 />
+                <button
+                    onClick={handleSubmit}
+                    className="bg-gray-800 text-white px-4 py-2 rounded-r-md hover:bg-gray-700"
+                >
+                  Submit
+                </button>
               </div>
-              <button
-                  onClick={handleEnterClick}
-                  className="w-full mt-2 bg-amber-600 text-black p-2 rounded font-medium hover:bg-amber-500 transition-colors"
-              >
-                Enter
-              </button>
             </div>
-          </div>
-        </div>
 
-        {/* Floating Keypad */}
-        <div className="mt-6 w-full max-w-md">
-          <KeyPad onKeyPress={handleKeyPress} />
+            <MenuDisplay menu={currentMenu} />
+          </div>
         </div>
       </main>
   )
