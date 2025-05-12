@@ -4,12 +4,23 @@ import { useState, useEffect } from "react"
 import { MenuDisplay } from "@/components/menu-display"
 import { menuData } from "@/lib/menu-data"
 
+interface MenuOption {
+  id: number
+  title: string
+  submenu?: MenuOption[]
+}
+
+interface Menu {
+  title: string
+  subtitle: string
+  options: MenuOption[]
+  type: string
+}
+
 export default function Home() {
   const [code, setCode] = useState<string>("")
   const [inputValue, setInputValue] = useState<string>("")
-  const [currentMenu, setCurrentMenu] = useState<never>(null)
-  const [showColorInput, setShowColorInput] = useState<boolean>(false)
-  const [history, setHistory] = useState<string[]>([])
+  const [currentMenu, setCurrentMenu] = useState<Menu | null>(null)
 
 
   useEffect(() => {
@@ -20,7 +31,6 @@ export default function Home() {
         options: menuData.mainMenu,
         type: "main",
       })
-      setShowColorInput(false)
     } else if (code.startsWith("*465*")) {
       const parts = code.slice(0, -1).split("*").filter(Boolean)
       parts.shift() // Remove the "465" part
@@ -71,18 +81,8 @@ export default function Home() {
           currentTitle += ` - ${lengthOption.title}`
           serviceDetails += ` - ${lengthOption.title}`
           menu = []
-          currentSubtitle = "Input Your Preferred Color"
-          menuType = "color"
-          setShowColorInput(true)
-        } else if (i === 3 && (parts[0] === "3" || parts[0] === "4" || parts[0] === "5")) {
-          // Color input
-          const colorValue = parts[i]
-          currentTitle += ` - Color: ${colorValue}`
-          serviceDetails += ` - Color: ${colorValue}`
-          menu = []
           currentSubtitle = `Thank you! You have booked a service for ${serviceDetails}.`
           menuType = "final"
-          setShowColorInput(false)
         }
       }
 
@@ -100,9 +100,8 @@ export default function Home() {
       // Process the code
       const newCode = inputValue
       setCode(newCode)
-      setHistory((prev) => [...prev, newCode])
       setInputValue("")
-    } else if (currentMenu && !showColorInput) {
+    } else if (currentMenu) {
       // Handle menu selection
       const selection = Number.parseInt(inputValue, 10)
 
@@ -131,11 +130,6 @@ export default function Home() {
         setCode(newCode)
         setInputValue("")
       }
-    } else if (showColorInput) {
-      // Handle color input
-      const newCode = code.slice(0, -1) + "*" + inputValue + "#"
-      setCode(newCode)
-      setInputValue("")
     }
   }
 
@@ -152,7 +146,7 @@ export default function Home() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     className="flex-1 p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-gray-400"
-                    placeholder={showColorInput ? "Enter color..." : "Enter code or selection..."}
+                    placeholder="Enter code or selection..."
                 />
                 <button
                     onClick={handleSubmit}
